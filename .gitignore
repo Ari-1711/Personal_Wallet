@@ -1,0 +1,68 @@
+# Built application files
+*.apk
+*.aar
+*.ap_
+*.aab
+
+# Files for the ART/Dalvik VM
+*.dex
+
+# Java class files
+*.class
+
+# Generated files
+bin/
+gen/
+out/
+app/build/
+
+# Gradle files & caches
+.gradle/
+build/
+
+# Local configuration file (sdk path, secrets)
+local.properties
+
+# Signing files
+*.jks
+*.keystore
+*.p12
+*.pem
+*.key
+
+# Log & Heap Dump files
+*.log
+*.hprof
+
+# Android Studio / IntelliJ IDEA
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/navTree.xml
+.idea/assetWizardSettings.xml
+.idea/caches/
+.idea/libraries/
+.idea/shelf/
+.idea/contentModel.xml
+.idea/dataSources/
+.idea/dataSources.xml
+.idea/dataSources.local.xml
+.idea/sqlDataSources.xml
+.idea/vcs.xml
+*.iml
+*.iws
+*.ipr
+
+# OS Specific
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Obsidian / Local notes cache
+.obsidian/
+
+# Android Captures
+captures/
