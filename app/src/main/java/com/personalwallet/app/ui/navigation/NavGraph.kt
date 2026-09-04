@@ -15,6 +15,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.runtime.remember
+import com.personalwallet.app.ui.components.AddTransactionFab
+import com.personalwallet.app.ui.screens.transaction.AddTransactionScreen
 import com.personalwallet.app.ui.screens.dashboard.DashboardScreen
 import com.personalwallet.app.ui.screens.draft.DraftScreen
 import com.personalwallet.app.ui.screens.leak.LeakScreen
@@ -23,28 +28,40 @@ import com.personalwallet.app.ui.screens.wallet.WalletScreen
 @Composable
 fun MainNavGraph() {
     val navController = rememberNavController()
+    val snackbarHostState = remember { SnackbarHostState() }
     
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        floatingActionButton = {
+            val navBackStackEntry by navController.currentBackStackEntryAsState()
+            val currentRoute = navBackStackEntry?.destination?.route
+            if (currentRoute == Screen.Dashboard.route || currentRoute == Screen.Drafts.route) {
+                AddTransactionFab(onClick = { navController.navigate(Screen.AddTransaction.route) })
+            }
+        },
         bottomBar = {
-            NavigationBar {
-                val navBackStackEntry by navController.currentBackStackEntryAsState()
-                val currentDestination = navBackStackEntry?.destination
-                
-                BottomNavScreens.forEach { screen ->
-                    NavigationBarItem(
-                        icon = { Icon(screen.icon, contentDescription = screen.title) },
-                        label = { Text(screen.title) },
-                        selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
-                        onClick = {
-                            navController.navigate(screen.route) {
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
+            val navBackStackEntry by navController.currentBackStackEntryAsState()
+            val currentRoute = navBackStackEntry?.destination?.route
+            if (currentRoute != Screen.AddTransaction.route) {
+                NavigationBar {
+                    val currentDestination = navBackStackEntry?.destination
+                    
+                    BottomNavScreens.forEach { screen ->
+                        NavigationBarItem(
+                            icon = { Icon(screen.icon, contentDescription = screen.title) },
+                            label = { Text(screen.title) },
+                            selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
+                            onClick = {
+                                navController.navigate(screen.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
                                 }
-                                launchSingleTop = true
-                                restoreState = true
                             }
-                        }
-                    )
+                        )
+                    }
                 }
             }
         }
@@ -58,6 +75,12 @@ fun MainNavGraph() {
             composable(Screen.Drafts.route) { DraftScreen() }
             composable(Screen.LeakDetection.route) { LeakScreen() }
             composable(Screen.Wallets.route) { WalletScreen() }
+            composable(Screen.AddTransaction.route) {
+                AddTransactionScreen(
+                    onNavigateBack = { navController.navigateUp() },
+                    snackbarHostState = snackbarHostState
+                )
+            }
         }
     }
 }

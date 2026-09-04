@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "bg-main": "#0D1117",
+            "card-bg": "#161B22",
+            "card-border": "#21262D",
+            "sage-accent": "#3FB950",
+            "text-main": "#E6EDF3",
+            "text-muted": "#8B949E",
+            "text-subtle": "#6E7681"
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          }
+        }
+      }
+    };
+  </script>
+<style>
+    @layer base {
+      html, body {
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        background-color: #0D1117;
+        color: #E6EDF3;
+        font-family: 'Plus Jakarta Sans', sans-serif;
+      }
+      body {
+        overscroll-behavior-y: none;
+        -webkit-font-smoothing: antialiased;
+      }
+      .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
+      .pt-safe { padding-top: env(safe-area-inset-top, 0px); }
+    }
+    ::-webkit-scrollbar { display: none; }
+  </style>
+</head>
+<body class="bg-bg-main text-text-main min-h-screen flex flex-col antialiased selection:bg-sage-accent/30 selection:text-text-main">
+<!-- Status Bar & Top Header -->
+<header class="fixed top-0 w-full z-40 bg-bg-main/90 backdrop-blur-md border-b border-card-border/60 pt-safe">
+<!-- Top System Time Bar -->
+<div class="px-5 h-7 flex items-center justify-between text-text-subtle text-xs">
+<span class="font-medium text-text-muted">09:41</span>
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center gap-1 text-[11px] text-sage-accent/90">
+<span class="material-symbols-outlined text-[13px]">shield</span>
+<span class="font-medium">Offline</span>
+</span>
+<span class="material-symbols-outlined text-[14px]">wifi</span>
+<span class="material-symbols-outlined text-[14px]">battery_full</span>
+</div>
+</div>
+<!-- Screen Title Header -->
+<div class="px-5 py-4 flex items-center justify-between">
+<div>
+<h1 class="text-xl font-bold tracking-tight text-text-main">Draft Notifikasi</h1>
+<p class="text-xs text-text-muted mt-0.5" id="header-subtitle">3 transaksi perlu konfirmasi</p>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-sage-accent/15 text-sage-accent border border-sage-accent/25" id="counter-pill">
+          3 Baru
+        </span>
+</div>
+</div>
+</header>
+<!-- Interactive Toast -->
+<div class="fixed top-24 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full bg-card-bg border border-card-border shadow-xl text-xs font-medium text-text-main flex items-center gap-2 opacity-0 pointer-events-none transition-all duration-300" id="toast">
+<span class="material-symbols-outlined text-sage-accent text-[16px]">check_circle</span>
+<span id="toast-text">Transaksi berhasil disimpan</span>
+</div>
+<!-- Main Content Body -->
+<main class="flex-1 w-full max-w-md mx-auto px-5 pt-32 pb-28 flex flex-col gap-4">
+<!-- Card Container -->
+<div class="flex flex-col gap-3" id="draft-cards">
+<!-- Kartu 1: GoPay -->
+<div class="rounded-2xl bg-card-bg border border-card-border p-4.5 transition-all duration-300" id="card-1">
+<div class="flex items-center justify-between mb-3">
+<div class="flex items-center gap-2">
+<span class="w-7 h-7 rounded-full bg-blue-500/10 text-blue-400 flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px]">wallet</span>
+</span>
+<div class="flex items-center gap-1.5 text-xs text-text-muted">
+<span class="font-semibold text-text-main">GoPay</span>
+<span>•</span>
+<span>Kopi Kenangan</span>
+</div>
+</div>
+<span class="text-[11px] font-medium px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/20">
+            Bocor Halus
+          </span>
+</div>
+<div class="mb-4 pl-0.5">
+<div class="text-2xl font-bold tracking-tight text-text-main">Rp 22.000</div>
+</div>
+<div class="flex items-center gap-2.5">
+<button class="flex-1 h-10 rounded-full bg-card-border/60 hover:bg-card-border text-text-muted hover:text-text-main text-xs font-semibold transition-colors" onclick="dismissCard('card-1')">
+            Abaikan
+          </button>
+<button class="flex-1 h-10 rounded-full bg-sage-accent hover:bg-sage-accent/90 text-bg-main text-xs font-bold transition-all shadow-sm active:scale-[0.98]" onclick="saveCard('card-1', 'Rp 22.000 disimpan')">
+            Simpan
+          </button>
+</div>
+</div>
+<!-- Kartu 2: SPayLater -->
+<div class="rounded-2xl bg-card-bg border border-card-border p-4.5 transition-all duration-300" id="card-2">
+<div class="flex items-center justify-between mb-3">
+<div class="flex items-center gap-2">
+<span class="w-7 h-7 rounded-full bg-orange-500/10 text-orange-400 flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px]">credit_card</span>
+</span>
+<div class="flex items-center gap-1.5 text-xs text-text-muted">
+<span class="font-semibold text-text-main">SPayLater</span>
+<span>•</span>
+<span>Tokopedia</span>
+</div>
+</div>
+<span class="text-[11px] font-medium px-2 py-0.5 rounded-full bg-card-border text-text-muted">
+            Cicilan PayLater
+          </span>
+</div>
+<div class="mb-4 pl-0.5">
+<div class="text-2xl font-bold tracking-tight text-text-main">Rp 450.000</div>
+</div>
+<div class="flex items-center gap-2.5">
+<button class="flex-1 h-10 rounded-full bg-card-border/60 hover:bg-card-border text-text-muted hover:text-text-main text-xs font-semibold transition-colors" onclick="dismissCard('card-2')">
+            Abaikan
+          </button>
+<button class="flex-1 h-10 rounded-full bg-sage-accent hover:bg-sage-accent/90 text-bg-main text-xs font-bold transition-all shadow-sm active:scale-[0.98]" onclick="saveCard('card-2', 'Rp 450.000 disimpan')">
+            Simpan
+          </button>
+</div>
+</div>
+<!-- Kartu 3: BCA -->
+<div class="rounded-2xl bg-card-bg border border-card-border p-4.5 transition-all duration-300" id="card-3">
+<div class="flex items-center justify-between mb-3">
+<div class="flex items-center gap-2">
+<span class="w-7 h-7 rounded-full bg-emerald-500/10 text-sage-accent flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px]">arrow_downward</span>
+</span>
+<div class="flex items-center gap-1.5 text-xs text-text-muted">
+<span class="font-semibold text-text-main">BCA</span>
+<span>•</span>
+<span>Transfer Masuk</span>
+</div>
+</div>
+<span class="text-[11px] font-medium px-2 py-0.5 rounded-full bg-sage-accent/15 text-sage-accent border border-sage-accent/20">
+            Pemasukan
+          </span>
+</div>
+<div class="mb-4 pl-0.5">
+<div class="text-2xl font-bold tracking-tight text-sage-accent">+Rp 3.500.000</div>
+</div>
+<div class="flex items-center gap-2.5">
+<button class="flex-1 h-10 rounded-full bg-card-border/60 hover:bg-card-border text-text-muted hover:text-text-main text-xs font-semibold transition-colors" onclick="dismissCard('card-3')">
+            Abaikan
+          </button>
+<button class="flex-1 h-10 rounded-full bg-sage-accent hover:bg-sage-accent/90 text-bg-main text-xs font-bold transition-all shadow-sm active:scale-[0.98]" onclick="saveCard('card-3', 'Rp 3.500.000 dicatat')">
+            Simpan
+          </button>
+</div>
+</div>
+</div>
+<!-- Accordion: 1 Notifikasi Belum Terbaca -->
+<div class="rounded-2xl bg-card-bg/60 border border-card-border overflow-hidden transition-colors mt-1">
+<button class="w-full px-4 py-3.5 flex items-center justify-between text-left text-xs font-medium text-text-muted hover:text-text-main" onclick="toggleAccordion()">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-amber-400/80"></span>
+<span>1 Notifikasi Belum Terbaca</span>
+</div>
+<span class="material-symbols-outlined text-text-subtle text-[18px] transition-transform duration-200" id="accordion-icon">
+          expand_more
+        </span>
+</button>
+<div class="hidden px-4 pb-4 pt-1 border-t border-card-border/60" id="accordion-content">
+<div class="p-3 rounded-xl bg-bg-main/60 border border-card-border text-xs text-text-muted">
+<div class="flex items-center justify-between text-[11px] text-text-subtle mb-1">
+<span>DANA</span>
+<span>08:15 WIB</span>
+</div>
+<p class="text-text-main font-normal leading-relaxed">
+            "Top up saldo Rp 50.000 berhasil melalui Transfer Virtual Account."
+          </p>
+<div class="mt-2.5 flex items-center justify-end gap-2">
+<button class="px-3 py-1 rounded-full text-[11px] text-text-muted hover:text-text-main" onclick="dismissAccordion()">
+              Abaikan
+            </button>
+<button class="px-3 py-1 rounded-full bg-card-border hover:bg-card-border/80 text-text-main text-[11px] font-semibold" onclick="saveAccordion()">
+              Proses
+            </button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Bottom Navigation -->
+<nav class="fixed bottom-0 w-full z-40 pb-safe bg-bg-main/90 backdrop-blur-md border-t border-card-border">
+<div class="flex items-center justify-around h-16 max-w-md mx-auto px-4">
+<a class="flex flex-col items-center gap-1 text-text-subtle hover:text-text-muted transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">grid_view</span>
+<span class="text-[11px] font-medium">Ringkasan</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-sage-accent transition-colors" href="#">
+<div class="relative">
+<span class="material-symbols-outlined text-[20px]">inbox</span>
+<span class="absolute -top-1 -right-1.5 w-2 h-2 rounded-full bg-sage-accent" id="nav-badge"></span>
+</div>
+<span class="text-[11px] font-semibold">Draft</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-text-subtle hover:text-text-muted transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">bubble_chart</span>
+<span class="text-[11px] font-medium">Deteksi</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-text-subtle hover:text-text-muted transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">account_balance_wallet</span>
+<span class="text-[11px] font-medium">Dompet</span>
+</a>
+</div>
+</nav>
+<script>
+    let remaining = 3;
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      const toastText = document.getElementById('toast-text');
+      toastText.innerText = msg;
+      toast.classList.remove('opacity-0', 'pointer-events-none');
+      toast.classList.add('opacity-100', '-translate-y-1');
+      setTimeout(() => {
+        toast.classList.remove('opacity-100', '-translate-y-1');
+        toast.classList.add('opacity-0', 'pointer-events-none');
+      }, 1800);
+    }
+
+    function updateState() {
+      const subtitle = document.getElementById('header-subtitle');
+      const pill = document.getElementById('counter-pill');
+      const badge = document.getElementById('nav-badge');
+
+      if (remaining > 0) {
+        subtitle.innerText = `${remaining} transaksi perlu konfirmasi`;
+        pill.innerText = `${remaining} Baru`;
+      } else {
+        subtitle.innerText = 'Semua transaksi terkonfirmasi';
+        pill.innerText = 'Selesai';
+        pill.className = 'text-xs font-semibold px-2.5 py-1 rounded-full bg-card-border text-text-muted';
+        if (badge) badge.classList.add('hidden');
+        
+        const container = document.getElementById('draft-cards');
+        container.innerHTML = `
+          <div class="py-12 px-4 text-center flex flex-col items-center justify-center gap-2 rounded-2xl bg-card-bg/40 border border-card-border">
+            <span class="material-symbols-outlined text-sage-accent text-[32px]">check_circle</span>
+            <p class="text-sm font-semibold text-text-main">Draft Bersih</p>
+            <p class="text-xs text-text-muted">Tidak ada transaksi yang tertunda.</p>
+          </div>
+        `;
+      }
+    }
+
+    function dismissCard(id) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.style.opacity = '0';
+      el.style.transform = 'scale(0.96)';
+      setTimeout(() => {
+        el.remove();
+        remaining = Math.max(0, remaining - 1);
+        updateState();
+        showToast('Transaksi diabaikan');
+      }, 200);
+    }
+
+    function saveCard(id, message) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.style.opacity = '0';
+      el.style.transform = 'scale(0.96)';
+      setTimeout(() => {
+        el.remove();
+        remaining = Math.max(0, remaining - 1);
+        updateState();
+        showToast(message);
+      }, 200);
+    }
+
+    function toggleAccordion() {
+      const content = document.getElementById('accordion-content');
+      const icon = document.getElementById('accordion-icon');
+      if (content.classList.contains('hidden')) {
+        content.classList.remove('hidden');
+        icon.style.transform = 'rotate(180deg)';
+      } else {
+        content.classList.add('hidden');
+        icon.style.transform = 'rotate(0deg)';
+      }
+    }
+
+    function dismissAccordion() {
+      toggleAccordion();
+      showToast('Notifikasi diabaikan');
+    }
+
+    function saveAccordion() {
+      toggleAccordion();
+      showToast('Notifikasi diproses ke draft');
+    }
+  </script>
+</body></html>

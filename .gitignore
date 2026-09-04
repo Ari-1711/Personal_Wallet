@@ -66,3 +66,9 @@ Thumbs.db
 
 # Android Captures
 captures/
+.idea/
+
+.idea/
+*.iml
+.gradle/
+build/
