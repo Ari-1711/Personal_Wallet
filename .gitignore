@@ -72,3 +72,5 @@ captures/
 *.iml
 .gradle/
 build/
+stitch_offline_smart_wallet_tracker/
+
