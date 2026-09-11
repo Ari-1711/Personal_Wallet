@@ -4,11 +4,17 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.personalwallet.app.core.database.dao.UnparsedNotificationDao
+import com.personalwallet.app.core.domain.matcher.SmartWalletMatcher
 import com.personalwallet.app.core.domain.repository.AccountRepository
 import com.personalwallet.app.core.domain.repository.TransactionRepository
 import com.personalwallet.app.core.model.AccountEntity
+import com.personalwallet.app.core.model.ExpenseCategoryType
 import com.personalwallet.app.core.model.TransactionEntity
+import com.personalwallet.app.core.model.TransactionSource
+import com.personalwallet.app.core.model.TransactionStatus
+import com.personalwallet.app.core.model.TransactionType
 import com.personalwallet.app.core.model.UnparsedNotificationEntity
+import com.personalwallet.app.core.parser.ParsedTransaction
 import com.personalwallet.app.core.util.NotificationPermissionHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -44,7 +50,8 @@ sealed interface DraftUiEvent {
 class DraftViewModel @Inject constructor(
     private val transactionRepository: TransactionRepository,
     private val accountRepository: AccountRepository,
-    private val unparsedNotificationDao: UnparsedNotificationDao
+    private val unparsedNotificationDao: UnparsedNotificationDao,
+    private val smartWalletMatcher: SmartWalletMatcher
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DraftUiState())
@@ -114,7 +121,7 @@ class DraftViewModel @Inject constructor(
                     destinationAccountId = transaction.destinationAccountId
                 )
                 
-                _uiEvent.emit(DraftUiEvent.ShowSnackbar("Draft dikonfirmasi & saldo tersinkronisasi!"))
+                _uiEvent.emit(DraftUiEvent.ShowSnackbar("Draft dikonfirmasi & masuk ke Transaksi Terkini!"))
             } catch (e: Exception) {
                 _uiEvent.emit(DraftUiEvent.ShowSnackbar("Gagal mengonfirmasi: ${e.message}"))
             }
@@ -128,6 +135,50 @@ class DraftViewModel @Inject constructor(
                 _uiEvent.emit(DraftUiEvent.ShowSnackbar("Draft diabaikan."))
             } catch (e: Exception) {
                 _uiEvent.emit(DraftUiEvent.ShowSnackbar("Gagal mengabaikan draft: ${e.message}"))
+            }
+        }
+    }
+
+    /**
+     * Konversi notifikasi mentah (Mentah) menjadi Draft Transaksi PENDING
+     */
+    fun convertUnparsedToDraft(unparsed: UnparsedNotificationEntity) {
+        viewModelScope.launch {
+            try {
+                // Ekstraksi angka otomatis dari teks mentah jika ada
+                val digitsOnly = unparsed.rawText
+                    .replace(".", "")
+                    .replace(",", "")
+                    .filter { it.isDigit() }
+                
+                val amount = digitsOnly.toLongOrNull() ?: 0L
+
+                // Cari dompet pencocokan cerdas berdasarkan packageName
+                val matchedAccountId = smartWalletMatcher.findOrCreateMatchingAccountId(
+                    unparsed.packageName,
+                    ParsedTransaction(amount = amount, merchantOrTitle = "Notifikasi Mentah", type = TransactionType.EXPENSE)
+                )
+
+                val newDraft = TransactionEntity(
+                    amount = amount,
+                    type = TransactionType.EXPENSE,
+                    source = TransactionSource.NOTIFICATION,
+                    status = TransactionStatus.PENDING, // Masuk ke Tab Draft Transaksi
+                    sourceAccountId = matchedAccountId,
+                    merchantOrTitle = "Notifikasi ${unparsed.packageName}",
+                    timestamp = unparsed.receivedTimestamp,
+                    categoryType = ExpenseCategoryType.DISCRETIONARY,
+                    subCategory = "Manual Convert",
+                    rawNotificationText = unparsed.rawText
+                )
+
+                transactionRepository.insertTransaction(newDraft)
+                unparsedNotificationDao.markAsResolved(unparsed.id)
+
+                _uiState.update { it.copy(selectedTab = DraftTab.PENDING_DRAFTS) }
+                _uiEvent.emit(DraftUiEvent.ShowSnackbar("Notifikasi dipindahkan ke Tab Draft Transaksi! Silakan konfirmasi."))
+            } catch (e: Exception) {
+                _uiEvent.emit(DraftUiEvent.ShowSnackbar("Gagal memindahkan: ${e.message}"))
             }
         }
     }

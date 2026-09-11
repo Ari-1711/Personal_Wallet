@@ -3,6 +3,17 @@ trigger: always_on
 ---
 # AI Dev Log
 
+## Sesi Konversi Notifikasi Mentah ke Draft Transaksi
+- **Model yang digunakan**: AI Assistant (Gemini / Claude via Android Studio)
+- **Problem**: Notifikasi yang masuk ke tab "Mentah" (Unparsed Fallback) perlu memiliki fitur pemindahan mudah ke Tab Draft agar pengguna dapat mengonfirmasinya menjadi transaksi aktif tanpa kehilangan data.
+- **Changes Made**:
+  - `ui/screens/draft/DraftViewModel.kt`: Ditambahkan fungsi `convertUnparsedToDraft(unparsed)` yang mengekstrak nominal angka secara otomatis, memasangkannya dengan `SmartWalletMatcher`, dan memasukkannya sebagai draft transaksi `PENDING`.
+  - `ui/screens/draft/DraftScreen.kt`: Menambahkan tombol **"Pindahkan ke Draft"** pada kartu `UnparsedNotificationCard` di tab Mentah.
+- **Decisions & Rationale**:
+  - Pengguna dapat memindahkan notifikasi yang gagal ter-parse dengan 1-ketukan dan langsung beralih ke Tab Draft untuk meninjau/mengonfirmasinya.
+
+---
+
 ## Sesi Parser Rules Notifikasi Tambahan (BCA, DANA, ShopeePay/SPayLater)
 - **Model yang digunakan**: AI Assistant (Gemini / Claude via Android Studio)
 - **Problem**: Ekstraksi notifikasi memerlukan dukungan parser untuk bank dan e-wallet utama Indonesia selain GoPay (m-BCA, DANA, ShopeePay, SPayLater).

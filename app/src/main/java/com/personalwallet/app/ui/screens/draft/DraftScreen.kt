@@ -71,7 +71,6 @@ fun DraftScreen(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    // Cek izin setiap kali pengguna membuka layar atau kembali dari halaman Pengaturan Android (ON_RESUME)
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
@@ -99,6 +98,7 @@ fun DraftScreen(
         onTabSelect = viewModel::selectTab,
         onConfirmDraft = viewModel::confirmDraft,
         onRejectDraft = viewModel::rejectDraft,
+        onConvertUnparsed = viewModel::convertUnparsedToDraft,
         onResolveUnparsed = viewModel::resolveUnparsed,
         onOpenNotificationSettings = {
             NotificationPermissionHelper.openNotificationListenerSettings(context)
@@ -113,6 +113,7 @@ private fun DraftContent(
     onTabSelect: (DraftTab) -> Unit,
     onConfirmDraft: (TransactionEntity, Long?) -> Unit,
     onRejectDraft: (Long) -> Unit,
+    onConvertUnparsed: (UnparsedNotificationEntity) -> Unit,
     onResolveUnparsed: (Long) -> Unit,
     onOpenNotificationSettings: () -> Unit
 ) {
@@ -133,7 +134,6 @@ private fun DraftContent(
                 color = MaterialTheme.colorScheme.onBackground
             )
 
-            // Status Badge Akses Notifikasi
             if (uiState.isNotificationPermissionGranted) {
                 ObsidianStatusChip(text = "Service Aktif", style = ObsidianChipStyle.POSITIVE)
             } else {
@@ -143,13 +143,11 @@ private fun DraftContent(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // BANNER PERINGATAN: Tampil jika izin Akses Notifikasi belum diberikan di Pengaturan HP
         if (!uiState.isNotificationPermissionGranted) {
             NotificationPermissionBanner(onOpenSettings = onOpenNotificationSettings)
             Spacer(modifier = Modifier.height(16.dp))
         }
 
-        // Tab Selector (Draft Transaksi vs Notifikasi Mentah)
         val tabs = listOf(
             "Draft (${uiState.pendingDrafts.size})",
             "Mentah (${uiState.unparsedNotifications.size})"
@@ -213,6 +211,7 @@ private fun DraftContent(
                     items(uiState.unparsedNotifications, key = { it.id }) { unparsed ->
                         UnparsedNotificationCard(
                             unparsed = unparsed,
+                            onConvert = { onConvertUnparsed(unparsed) },
                             onResolve = { onResolveUnparsed(unparsed.id) }
                         )
                     }
@@ -378,6 +377,7 @@ private fun PendingDraftCard(
 @Composable
 private fun UnparsedNotificationCard(
     unparsed: UnparsedNotificationEntity,
+    onConvert: () -> Unit,
     onResolve: () -> Unit
 ) {
     val formatter = DateTimeFormatter.ofPattern("dd MMM yyyy, HH:mm", Locale("id", "ID"))
@@ -397,7 +397,7 @@ private fun UnparsedNotificationCard(
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onBackground
                 )
-                ObsidianStatusChip(text = "Fallback", style = ObsidianChipStyle.NEUTRAL)
+                ObsidianStatusChip(text = "Fallback Mentah", style = ObsidianChipStyle.NEUTRAL)
             }
             
             Spacer(modifier = Modifier.height(4.dp))
@@ -415,11 +415,23 @@ private fun UnparsedNotificationCard(
             )
 
             Spacer(modifier = Modifier.height(12.dp))
-            OutlinedButton(
-                onClick = onResolve,
-                modifier = Modifier.align(Alignment.End)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text("Tandai Selesai")
+                OutlinedButton(
+                    onClick = onResolve,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("Selesai")
+                }
+                
+                Button(
+                    onClick = onConvert,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("Pindahkan ke Draft")
+                }
             }
         }
     }
