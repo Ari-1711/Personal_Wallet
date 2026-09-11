@@ -5,19 +5,17 @@ import com.personalwallet.app.core.parser.NotificationParser
 import com.personalwallet.app.core.parser.ParsedTransaction
 
 /**
- * Aturan regex independen untuk aplikasi Gojek / GoPay
- * Terisolasi sesuai aturan Separation of Concerns (Agent Incremental Edits)
+ * Aturan regex independen untuk aplikasi Gojek / GoPay / GoPayLater
  */
 class GoPayParserRule : NotificationParser {
     override val targetPackageName = "com.gojek.app"
 
-    // Contoh Format: "Pembayaran ke Kopi Kenangan sebesar Rp25.000 berhasil"
     private val expenseRegex = Regex("Pembayaran ke (.+) sebesar Rp([\\d.]+) berhasil", RegexOption.IGNORE_CASE)
-    
-    // Contoh Format: "Kamu berhasil top up GoPay sebesar Rp100.000"
     private val topUpRegex = Regex("berhasil top up GoPay sebesar Rp([\\d.]+)", RegexOption.IGNORE_CASE)
 
     override fun parse(title: String, text: String): ParsedTransaction? {
+        val isPayLater = text.contains("paylater", ignoreCase = true) || text.contains("gopaylater", ignoreCase = true)
+
         val expenseMatch = expenseRegex.find(text)
         if (expenseMatch != null) {
             val merchant = expenseMatch.groupValues[1].trim()
@@ -26,7 +24,8 @@ class GoPayParserRule : NotificationParser {
             return ParsedTransaction(
                 amount = amount,
                 merchantOrTitle = merchant,
-                type = TransactionType.EXPENSE
+                type = TransactionType.EXPENSE,
+                isPayLater = isPayLater
             )
         }
 
@@ -37,7 +36,8 @@ class GoPayParserRule : NotificationParser {
             return ParsedTransaction(
                 amount = amount,
                 merchantOrTitle = "Top Up GoPay",
-                type = TransactionType.INCOME
+                type = TransactionType.INCOME,
+                isPayLater = false
             )
         }
 

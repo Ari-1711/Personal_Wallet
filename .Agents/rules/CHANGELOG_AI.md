@@ -3,6 +3,18 @@ trigger: always_on
 ---
 # AI Dev Log
 
+## Sesi Smart Wallet Matcher (Pencocokan Dompet Otomatis)
+- **Model yang digunakan**: AI Assistant (Gemini / Claude via Android Studio)
+- **Problem**: Notifikasi ter-parse secara otomatis memerlukan mekanisme pencocokan cerdas ke dompet yang tepat di database (Gojek -> "GoPay", BCA -> "BCA", SPayLater -> "SPayLater") tanpa perlu memasangkannya manual.
+- **Changes Made**:
+  - `core/domain/matcher/SmartWalletMatcher.kt`: Dibuat logika pencocokan cerdas berdasarkan `packageName` dan flag `isPayLater`.
+  - `core/service/WalletNotificationService.kt`: Menautkan `SmartWalletMatcher.findOrCreateMatchingAccountId(...)` saat menyimpan draft transaksi.
+  - `core/parser/rules/GoPayParserRule.kt`: Menambahkan pengenalan flag `isPayLater` jika notifikasi memuat teks GoPayLater.
+- **Decisions & Rationale**:
+  - Jika akun dompet sasaran belum pernah ada di database, `SmartWalletMatcher` akan membuat dompet baru secara otomatis (*Zero Configuration Error*), sehingga transaksi tidak pernah gagal disimpan akibat konflik FK.
+
+---
+
 ## Sesi Indikator & Panduan Izin Akses Notifikasi di UI
 - **Model yang digunakan**: AI Assistant (Gemini / Claude via Android Studio)
 - **Problem**: Pengguna memerlukan panduan dan tombol di UI untuk mengaktifkan izin Akses Notifikasi (*Notification Listener Access*) di Pengaturan Sistem Android agar fitur otomatisasi berjalan.
