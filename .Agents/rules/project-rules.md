@@ -1,3 +1,6 @@
+---
+trigger: always_on
+---
 # Project Rules: Personal_Wallet
 
 ## 1. Project Goal & High-Level Summary

@@ -10,9 +10,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -20,6 +23,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -29,6 +33,7 @@ import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -36,13 +41,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.personalwallet.app.core.model.AccountEntity
 import com.personalwallet.app.core.model.TransactionEntity
 import com.personalwallet.app.core.model.UnparsedNotificationEntity
+import com.personalwallet.app.core.util.NotificationPermissionHelper
 import com.personalwallet.app.ui.components.ObsidianCard
 import com.personalwallet.app.ui.components.ObsidianChipStyle
 import com.personalwallet.app.ui.components.ObsidianStatusChip
@@ -58,6 +68,21 @@ fun DraftScreen(
     viewModel: DraftViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    // Cek izin setiap kali pengguna membuka layar atau kembali dari halaman Pengaturan Android (ON_RESUME)
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.checkPermission(context)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     LaunchedEffect(Unit) {
         viewModel.uiEvent.collect { event ->
@@ -74,7 +99,10 @@ fun DraftScreen(
         onTabSelect = viewModel::selectTab,
         onConfirmDraft = viewModel::confirmDraft,
         onRejectDraft = viewModel::rejectDraft,
-        onResolveUnparsed = viewModel::resolveUnparsed
+        onResolveUnparsed = viewModel::resolveUnparsed,
+        onOpenNotificationSettings = {
+            NotificationPermissionHelper.openNotificationListenerSettings(context)
+        }
     )
 }
 
@@ -85,7 +113,8 @@ private fun DraftContent(
     onTabSelect: (DraftTab) -> Unit,
     onConfirmDraft: (TransactionEntity, Long?) -> Unit,
     onRejectDraft: (Long) -> Unit,
-    onResolveUnparsed: (Long) -> Unit
+    onResolveUnparsed: (Long) -> Unit,
+    onOpenNotificationSettings: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -93,13 +122,32 @@ private fun DraftContent(
             .background(MaterialTheme.colorScheme.background)
             .padding(horizontal = 20.dp, vertical = 24.dp)
     ) {
-        Text(
-            text = "Draft & Ingestion Log",
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onBackground
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Draft & Ingestion Log",
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+
+            // Status Badge Akses Notifikasi
+            if (uiState.isNotificationPermissionGranted) {
+                ObsidianStatusChip(text = "Service Aktif", style = ObsidianChipStyle.POSITIVE)
+            } else {
+                ObsidianStatusChip(text = "Belum Aktif", style = ObsidianChipStyle.PENDING)
+            }
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
+
+        // BANNER PERINGATAN: Tampil jika izin Akses Notifikasi belum diberikan di Pengaturan HP
+        if (!uiState.isNotificationPermissionGranted) {
+            NotificationPermissionBanner(onOpenSettings = onOpenNotificationSettings)
+            Spacer(modifier = Modifier.height(16.dp))
+        }
 
         // Tab Selector (Draft Transaksi vs Notifikasi Mentah)
         val tabs = listOf(
@@ -174,6 +222,43 @@ private fun DraftContent(
     }
 }
 
+@Composable
+private fun NotificationPermissionBanner(
+    onOpenSettings: () -> Unit
+) {
+    ObsidianCard(modifier = Modifier.fillMaxWidth()) {
+        Column {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Default.Warning,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.secondary,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Akses Notifikasi Belum Aktif",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+            }
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                text = "Aplikasi memerlukan izin ini untuk membaca notifikasi perbankan & e-wallet secara otomatis di HP Anda.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Button(
+                onClick = onOpenSettings,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Aktifkan Akses Notifikasi di Settings")
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PendingDraftCard(
@@ -230,7 +315,6 @@ private fun PendingDraftCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Pemilih Dompet Sumber Dana sebelum 1-click Confirm
             ExposedDropdownMenuBox(
                 expanded = accountExpanded,
                 onExpandedChange = { accountExpanded = !accountExpanded }
@@ -266,7 +350,6 @@ private fun PendingDraftCard(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Action Buttons: Confirm & Reject
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)

@@ -1,3 +1,7 @@
+---
+trigger: always_on
+---
+
 # Error Handling & Logging Rules: Personal_Wallet
 
 ## 1. Core Philosophy & Error Boundaries

@@ -1,5 +1,6 @@
 package com.personalwallet.app.ui.screens.draft
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.personalwallet.app.core.database.dao.UnparsedNotificationDao
@@ -8,6 +9,7 @@ import com.personalwallet.app.core.domain.repository.TransactionRepository
 import com.personalwallet.app.core.model.AccountEntity
 import com.personalwallet.app.core.model.TransactionEntity
 import com.personalwallet.app.core.model.UnparsedNotificationEntity
+import com.personalwallet.app.core.util.NotificationPermissionHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,6 +31,7 @@ data class DraftUiState(
     val pendingDrafts: List<TransactionEntity> = emptyList(),
     val unparsedNotifications: List<UnparsedNotificationEntity> = emptyList(),
     val accounts: List<AccountEntity> = emptyList(),
+    val isNotificationPermissionGranted: Boolean = false,
     val isLoading: Boolean = false,
     val error: String? = null
 )
@@ -52,6 +55,11 @@ class DraftViewModel @Inject constructor(
 
     init {
         loadData()
+    }
+
+    fun checkPermission(context: Context) {
+        val granted = NotificationPermissionHelper.isNotificationListenerEnabled(context)
+        _uiState.update { it.copy(isNotificationPermissionGranted = granted) }
     }
 
     private fun loadData() {
@@ -88,7 +96,6 @@ class DraftViewModel @Inject constructor(
             try {
                 var accountId = overrideAccountId ?: transaction.sourceAccountId
                 
-                // Jika belum ada dompet terikat, gunakan dompet pertama jika ada
                 if (accountId == 0L) {
                     val firstAccount = _uiState.value.accounts.firstOrNull()
                     if (firstAccount != null) {

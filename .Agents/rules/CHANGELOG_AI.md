@@ -3,6 +3,21 @@ trigger: always_on
 ---
 # AI Dev Log
 
+## Sesi Indikator & Panduan Izin Akses Notifikasi di UI
+- **Model yang digunakan**: AI Assistant (Gemini / Claude via Android Studio)
+- **Problem**: Pengguna memerlukan panduan dan tombol di UI untuk mengaktifkan izin Akses Notifikasi (*Notification Listener Access*) di Pengaturan Sistem Android agar fitur otomatisasi berjalan.
+- **Changes Made**:
+  - `core/util/NotificationPermissionHelper.kt`: Dibuat helper untuk memeriksa `Settings.Secure.getString(..., "enabled_notification_listeners")` danIntent pembuka `Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS`.
+  - `ui/screens/draft/DraftViewModel.kt`: Ditambahkan fungsi `checkPermission(context)` dan state `isNotificationPermissionGranted`.
+  - `ui/screens/draft/DraftScreen.kt`:
+    - Pengamatan siklus hidup `LifecycleEventObserver` (ON_RESUME) untuk memverifikasi izin secara otomatis saat pengguna kembali dari halaman Pengaturan Android.
+    - `NotificationPermissionBanner`: Banner visual *Obsidian Sage* di bagian atas layar Draft jika izin belum aktif, lengkap dengan tombol **"Aktifkan Akses Notifikasi di Settings"**.
+    - Chip status `"Service Aktif"` / `"Belum Aktif"` di header layar.
+- **Decisions & Rationale**:
+  - Memeriksa izin pada event `ON_RESUME` memastikan UI langsung memperbarui statusnya menjadi *"Service Aktif"* seketika setelah pengguna menyalakan sakelar di Pengaturan Android.
+
+---
+
 ## Sesi Pembuatan Berkas Data Uji Postman (JSON & CSV)
 - **Commit**: `0aef0e7`
 - **Model yang digunakan**: AI Assistant (Gemini / Claude via Android Studio)
