@@ -3,6 +3,17 @@ trigger: always_on
 ---
 # AI Dev Log
 
+## Sesi Perbaikan Bug `extras.getCharSequence` pada Notification Extras
+- **Model yang digunakan**: AI Assistant (Gemini / Claude via Android Studio)
+- **Problem**: Pembacaan teks notifikasi menggunakan `extras.getString("android.text")` menghasilkan nilai `null` untuk notifikasi bertipe `CharSequence` / `SpannableString` / `BigText` (seperti dari ADB shell `-S bigtext`), sehingga teks dianggap kosong dan menghasilkan angka Rp 0.
+- **Changes Made**:
+  - `core/service/WalletNotificationService.kt`: Mengganti `getString` dengan `getCharSequence("android.bigText")` / `getCharSequence("android.text")`.toString().
+  - Menambahkan pengkondisian `parsed.amount > 0` untuk memastikan nominal ter-parse secara valid sebelum disimpan sebagai draft.
+- **Decisions & Rationale**:
+  - `Bundle.getString()` pada Android melempar cast error/null jika extra dikirim sebagai `CharSequence`. Menggunakan `getCharSequence` menjamin notifikasi dengan gaya BigText maupun standar selalu terbaca secara penuh.
+
+---
+
 ## Sesi Dukungan Simulasi ADB Terminal & Presisi Ekstraksi Nominal Mentah
 - **Model yang digunakan**: AI Assistant (Gemini / Claude via Android Studio)
 - **Problem**: 

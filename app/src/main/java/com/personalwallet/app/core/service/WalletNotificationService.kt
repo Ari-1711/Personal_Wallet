@@ -35,9 +35,20 @@ class WalletNotificationService : NotificationListenerService() {
         
         val packageName = sbn.packageName
         val extras = sbn.notification.extras
-        val title = extras.getString("android.title") ?: ""
-        val text = extras.getString("android.text") ?: ""
+        
+        // PERBAIKAN PENTING: Gunakan getCharSequence agar tidak null saat notifikasi memuat CharSequence/SpannableString/BigText
+        val title = (extras.getCharSequence("android.title")
+            ?: extras.getCharSequence("android.title.big")
+            ?: "").toString().trim()
+
+        val text = (extras.getCharSequence("android.bigText")
+            ?: extras.getCharSequence("android.text")
+            ?: extras.getCharSequence("android.subText")
+            ?: "").toString().trim()
+
         val timestamp = sbn.postTime
+
+        Log.d("[Core/Parser]", "Notification Captured -> Package: '$packageName', Title: '$title', Text: '$text'")
 
         if (text.isBlank()) return
 
@@ -56,9 +67,8 @@ class WalletNotificationService : NotificationListenerService() {
                 // Teruskan ke Mesin Parser
                 val parsed = parserEngine.parse(packageName, title, text)
                 
-                if (parsed != null) {
+                if (parsed != null && parsed.amount > 0) {
                     // Pencocokan Dompet Cerdas (Smart Wallet Matcher)
-                    // Mencocokkan nama aplikasi notifikasi (Gojek -> "GoPay", BCA -> "BCA", SPayLater -> "SPayLater")
                     val matchedAccountId = smartWalletMatcher.findOrCreateMatchingAccountId(packageName, parsed)
 
                     val transaction = TransactionEntity(
@@ -66,7 +76,7 @@ class WalletNotificationService : NotificationListenerService() {
                         type = parsed.type,
                         source = TransactionSource.NOTIFICATION,
                         status = TransactionStatus.PENDING, // Draft-First
-                        sourceAccountId = matchedAccountId, // ID Dompet Hasil Pencocokan Cerdas
+                        sourceAccountId = matchedAccountId,
                         merchantOrTitle = parsed.merchantOrTitle,
                         timestamp = timestamp,
                         categoryType = parsed.categoryType,
@@ -76,16 +86,16 @@ class WalletNotificationService : NotificationListenerService() {
                     )
                     
                     transactionRepository.insertTransaction(transaction)
-                    Log.i("[Core/Parser]", "Berhasil mengekstrak notifikasi $packageName ke dompet ID: $matchedAccountId")
+                    Log.i("[Core/Parser]", "Berhasil mengekstrak ${parsed.amount} dari $packageName ke dompet ID: $matchedAccountId")
                 } else {
-                    // Graceful Fallback
+                    // Graceful Fallback jika regex mismatch atau nominal 0
                     val unparsed = UnparsedNotificationEntity(
                         packageName = packageName,
                         rawText = text,
                         receivedTimestamp = timestamp
                     )
                     unparsedNotificationDao.insertUnparsedNotification(unparsed)
-                    Log.w("[Core/Parser]", "Gagal memproses notifikasi. Teks disimpan ke unparsed fallback.")
+                    Log.w("[Core/Parser]", "Gagal memproses notifikasi. Teks '$text' disimpan ke unparsed fallback.")
                 }
             } catch (e: Exception) {
                 Log.e("[Core/Parser]", "Terjadi kesalahan sistem saat parsing", e)
