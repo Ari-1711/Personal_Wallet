@@ -3,6 +3,20 @@ trigger: always_on
 ---
 # AI Dev Log
 
+## Sesi Dukungan Simulasi ADB Terminal & Presisi Ekstraksi Nominal Mentah
+- **Model yang digunakan**: AI Assistant (Gemini / Claude via Android Studio)
+- **Problem**: 
+  - Saat menguji notifikasi via command ADB (`adb shell cmd notification post`), package name yang terkirim adalah `com.android.shell` sehingga `NotificationParserEngine` gagal mencocokkan parser resmi (GoPay/BCA/DANA/ShopeePay) dan melemparnya ke tab "Mentah".
+  - Ekstraksi nominal pada fitur konversi manual dari tab Mentah belum membaca format `Rp15.000` dengan presisi sehingga menghasilkan nilai Rp 0.
+- **Changes Made**:
+  - `core/parser/NotificationParserEngine.kt`: Menambahkan fallback inspeksi parser jika `packageName` berasal dari ADB shell/testing.
+  - `core/parser/rules/DanaParserRule.kt`: Menyesuaikan regex parser DANA agar fleksibel membaca variasi separator titik/koma.
+  - `ui/screens/draft/DraftViewModel.kt`: Menggunakan regex `Rp\s*([\d.,]+)` pada fungsi `convertUnparsedToDraft()` untuk menjamin ekstraksi angka 15000 secara presisi dari notifikasi mentah.
+- **Decisions & Rationale**:
+  - Dukungan ADB shell membuat pengujian lokal via terminal dapat berjalan 100% identik dengan pengujian di HP asli dari aplikasi resmi.
+
+---
+
 ## Sesi Konversi Notifikasi Mentah ke Draft Transaksi
 - **Model yang digunakan**: AI Assistant (Gemini / Claude via Android Studio)
 - **Problem**: Notifikasi yang masuk ke tab "Mentah" (Unparsed Fallback) perlu memiliki fitur pemindahan mudah ke Tab Draft agar pengguna dapat mengonfirmasinya menjadi transaksi aktif tanpa kehilangan data.

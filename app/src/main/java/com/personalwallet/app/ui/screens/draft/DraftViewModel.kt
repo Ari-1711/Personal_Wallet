@@ -140,32 +140,41 @@ class DraftViewModel @Inject constructor(
     }
 
     /**
-     * Konversi notifikasi mentah (Mentah) menjadi Draft Transaksi PENDING
+     * Konversi notifikasi mentah (Mentah) menjadi Draft Transaksi PENDING dengan ekstraksi nominal presisi
      */
     fun convertUnparsedToDraft(unparsed: UnparsedNotificationEntity) {
         viewModelScope.launch {
             try {
-                // Ekstraksi angka otomatis dari teks mentah jika ada
-                val digitsOnly = unparsed.rawText
-                    .replace(".", "")
-                    .replace(",", "")
-                    .filter { it.isDigit() }
+                // Ekstraksi nominal berformat RpXX.XXX secara presisi
+                val rpMatch = Regex("Rp\\s*([\\d.,]+)", RegexOption.IGNORE_CASE).find(unparsed.rawText)
+                val amountStr = if (rpMatch != null) {
+                    rpMatch.groupValues[1].split(",")[0].replace(".", "").replace(" ", "")
+                } else {
+                    unparsed.rawText.replace(".", "").replace(",", "").filter { it.isDigit() }
+                }
                 
-                val amount = digitsOnly.toLongOrNull() ?: 0L
+                val amount = amountStr.toLongOrNull() ?: 0L
 
-                // Cari dompet pencocokan cerdas berdasarkan packageName
+                // Ekstraksi nama merchant / keterangan singkat
+                val merchantName = if (unparsed.rawText.contains("ke ", ignoreCase = true)) {
+                    unparsed.rawText.substringAfter("ke ", "Notifikasi Mentah").substringBefore(" pakai", "Notifikasi Mentah").trim()
+                } else {
+                    "Notifikasi Mentah (${unparsed.packageName})"
+                }
+
+                // Cari dompet pencocokan cerdas
                 val matchedAccountId = smartWalletMatcher.findOrCreateMatchingAccountId(
                     unparsed.packageName,
-                    ParsedTransaction(amount = amount, merchantOrTitle = "Notifikasi Mentah", type = TransactionType.EXPENSE)
+                    ParsedTransaction(amount = amount, merchantOrTitle = merchantName, type = TransactionType.EXPENSE)
                 )
 
                 val newDraft = TransactionEntity(
                     amount = amount,
                     type = TransactionType.EXPENSE,
                     source = TransactionSource.NOTIFICATION,
-                    status = TransactionStatus.PENDING, // Masuk ke Tab Draft Transaksi
+                    status = TransactionStatus.PENDING,
                     sourceAccountId = matchedAccountId,
-                    merchantOrTitle = "Notifikasi ${unparsed.packageName}",
+                    merchantOrTitle = merchantName,
                     timestamp = unparsed.receivedTimestamp,
                     categoryType = ExpenseCategoryType.DISCRETIONARY,
                     subCategory = "Manual Convert",
@@ -176,7 +185,7 @@ class DraftViewModel @Inject constructor(
                 unparsedNotificationDao.markAsResolved(unparsed.id)
 
                 _uiState.update { it.copy(selectedTab = DraftTab.PENDING_DRAFTS) }
-                _uiEvent.emit(DraftUiEvent.ShowSnackbar("Notifikasi dipindahkan ke Tab Draft Transaksi! Silakan konfirmasi."))
+                _uiEvent.emit(DraftUiEvent.ShowSnackbar("Notifikasi berhasil diekstrak (Rp $amount) & dipindahkan ke Tab Draft Transaksi!"))
             } catch (e: Exception) {
                 _uiEvent.emit(DraftUiEvent.ShowSnackbar("Gagal memindahkan: ${e.message}"))
             }

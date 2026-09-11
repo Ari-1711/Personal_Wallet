@@ -19,6 +19,16 @@ class NotificationParserEngine @Inject constructor() {
     )
 
     fun parse(packageName: String, title: String, text: String): ParsedTransaction? {
+        // DUKUNGAN UNTUK SIMULASI ADB TERMINAL (Package com.android.shell atau android)
+        // Jika notifikasi dikirim via command ADB shell, uji terhadap semua parser yang ada
+        if (packageName == "com.android.shell" || packageName == "android" || packageName.contains("shell")) {
+            for (parser in parsers) {
+                val result = parser.parse(title, text)
+                if (result != null) return result
+            }
+        }
+
+        // Jalur Produksi Resmi: Cari parser spesifik berdasarkan packageName
         val parser = parsers.find { it.targetPackageName == packageName } ?: return null
         return parser.parse(title, text)
     }
