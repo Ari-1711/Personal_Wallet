@@ -3,6 +3,19 @@ trigger: always_on
 ---
 # AI Dev Log
 
+## Sesi Parser Rules Notifikasi Tambahan (BCA, DANA, ShopeePay/SPayLater)
+- **Model yang digunakan**: AI Assistant (Gemini / Claude via Android Studio)
+- **Problem**: Ekstraksi notifikasi memerlukan dukungan parser untuk bank dan e-wallet utama Indonesia selain GoPay (m-BCA, DANA, ShopeePay, SPayLater).
+- **Changes Made**:
+  - `core/parser/rules/BcaParserRule.kt`: Aturan regex ekstraksi notifikasi m-BCA (Transfer DIBAYAR & MASUK).
+  - `core/parser/rules/DanaParserRule.kt`: Aturan regex ekstraksi transaksi DANA (Bayar Merchant & Top Up).
+  - `core/parser/rules/ShopeePayParserRule.kt`: Aturan regex ekstraksi transaksi ShopeePay dan tagihan SPayLater (dengan flag `isPayLater = true`).
+  - `core/parser/NotificationParserEngine.kt`: Mendaftarkan ketiga parser baru ke dalam mesin utama.
+- **Decisions & Rationale**:
+  - Mengisolasi tiap aturan di dalam berkas terpisah (`*ParserRule.kt`) sesuai aturan *Agent Incremental Edits* agar pola ekstraksi satu aplikasi dapat diperbarui tanpa mengganggu aplikasi lain.
+
+---
+
 ## Sesi Smart Wallet Matcher (Pencocokan Dompet Otomatis)
 - **Model yang digunakan**: AI Assistant (Gemini / Claude via Android Studio)
 - **Problem**: Notifikasi ter-parse secara otomatis memerlukan mekanisme pencocokan cerdas ke dompet yang tepat di database (Gojek -> "GoPay", BCA -> "BCA", SPayLater -> "SPayLater") tanpa perlu memasangkannya manual.
