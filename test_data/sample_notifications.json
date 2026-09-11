@@ -1,0 +1,32 @@
+[
+  {
+    "packageName": "com.gojek.app",
+    "title": "GoPay",
+    "text": "Pembayaran ke Kopi Kenangan sebesar Rp22.000 berhasil",
+    "postTime": 1725350400000
+  },
+  {
+    "packageName": "com.gojek.app",
+    "title": "GoPay",
+    "text": "Kamu berhasil top up GoPay sebesar Rp100.000",
+    "postTime": 1725351000000
+  },
+  {
+    "packageName": "m.banking.bca",
+    "title": "m-BCA",
+    "text": "m-Transfer: 03/09 14:20:10 Ke 1234567890 a/n INDOMARET Rp 85.000,00 DIBAYAR",
+    "postTime": 1725354000000
+  },
+  {
+    "packageName": "com.shopee.id",
+    "title": "ShopeePay",
+    "text": "Pembayaran SPayLater sebesar Rp450.000 berhasil disetujui",
+    "postTime": 1725357600000
+  },
+  {
+    "packageName": "id.dana",
+    "title": "DANA",
+    "text": "Berhasil bayar Rp15.000 ke Kopi Janji Jiwa pakai DANA",
+    "postTime": 1725360000000
+  }
+]

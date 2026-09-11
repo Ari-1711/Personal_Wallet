@@ -1,0 +1,141 @@
+{
+  "info": {
+    "_postman_id": " personal-wallet-test-collection",
+    "name": "Personal Wallet - Test Suite & Mock Data",
+    "description": "Koleksi Postman untuk pengujian data transaksi, notifikasi e-wallet (GoPay, BCA, DANA, SPayLater), dan pengujian skema local-first Personal Wallet.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Notifications (Ingestion Feed)",
+      "item": [
+        {
+          "name": "Simulate GoPay Expense Notification",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"packageName\": \"com.gojek.app\",\n  \"title\": \"GoPay\",\n  \"text\": \"Pembayaran ke Kopi Kenangan sebesar Rp22.000 berhasil\",\n  \"postTime\": 1725350400000\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/notifications/ingest",
+              "host": ["{{base_url}}"],
+              "path": ["api", "notifications", "ingest"]
+            },
+            "description": "Simulasi notifikasi pengeluaran kopi dari GoPay."
+          },
+          "response": []
+        },
+        {
+          "name": "Simulate GoPay TopUp Notification",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"packageName\": \"com.gojek.app\",\n  \"title\": \"GoPay\",\n  \"text\": \"Kamu berhasil top up GoPay sebesar Rp100.000\",\n  \"postTime\": 1725351000000\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/notifications/ingest",
+              "host": ["{{base_url}}"],
+              "path": ["api", "notifications", "ingest"]
+            },
+            "description": "Simulasi notifikasi top up saldo GoPay."
+          },
+          "response": []
+        },
+        {
+          "name": "Simulate Unparsed Notification (Fallback)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"packageName\": \"com.unknown.bank\",\n  \"title\": \"Bank Promo\",\n  \"text\": \"Dapatkan cashback 50% setiap pembelian pulsa di aplikasi kami!\",\n  \"postTime\": 1725352000000\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/notifications/ingest",
+              "host": ["{{base_url}}"],
+              "path": ["api", "notifications", "ingest"]
+            },
+            "description": "Simulasi notifikasi promo/iklan yang tidak cocok regex dan harus masuk ke Unparsed Fallback."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Transactions (Buku Kas)",
+      "item": [
+        {
+          "name": "Add Manual Expense",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 85000,\n  \"type\": \"EXPENSE\",\n  \"source\": \"MANUAL\",\n  \"status\": \"CONFIRMED\",\n  \"sourceAccountName\": \"BCA\",\n  \"merchantOrTitle\": \"Indomaret\",\n  \"timestamp\": 1725354000000,\n  \"categoryType\": \"VARIABLE_ESSENTIAL\",\n  \"subCategory\": \"GROCERIES\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/transactions",
+              "host": ["{{base_url}}"],
+              "path": ["api", "transactions"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Process PayLater Settlement (Transfer)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 1200000,\n  \"type\": \"TRANSFER\",\n  \"source\": \"MANUAL\",\n  \"status\": \"CONFIRMED\",\n  \"sourceAccountName\": \"BCA\",\n  \"destinationAccountName\": \"SPayLater\",\n  \"merchantOrTitle\": \"Pelunasan SPayLater via BCA\",\n  \"timestamp\": 1725361200000,\n  \"categoryType\": \"TRANSFER_CATEGORY\",\n  \"subCategory\": \"Pelunasan Tagihan\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/transactions/settlement",
+              "host": ["{{base_url}}"],
+              "path": ["api", "transactions", "settlement"]
+            },
+            "description": "Simulasi transfer pelunasan tagihan PayLater tanpa memicu double counting pengeluaran."
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string"
+    }
+  ]
+}
